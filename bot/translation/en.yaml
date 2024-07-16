@@ -4,9 +4,10 @@
 
 name: English
 natively: English
+code: en
 
 authors:
-   - Quantum
+   - RabbitFoRed
 
 #commons
 start_txt: |-
@@ -32,7 +33,7 @@ admin_help_txt: |-
    /broadcast : Broadcast a message to all users      
    /stats : Check stats of your bot
 
-about_txt: |-
+about_txt: |+
    **About Me :**
    \n  - **Name**      : Telegram-Bot
    \n  - **Creator**   : @theostrich
@@ -76,3 +77,7 @@ privacy_policy: |-
 
 force_sub_txt: |-
    Subscribe to {channel} to use this bot
+force_sub_btn: |-
+   [Subscribe](url::{channel_url})
+
+#plugins/admin

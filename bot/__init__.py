@@ -1,8 +1,10 @@
-from pyrogram import Client
 import sys
-from .core import logger, ProcessManager
-from .core.shared import CONFIG
 
+from pyrogram import Client
+
+from .core import ProcessManager, logger
+from .core.shared import CONFIG
+from .core import Translator
 #if version < 3.6, stop bot.
 if sys.version_info[0] < 3 or sys.version_info[1] < 6:
     logger.error(
@@ -15,3 +17,7 @@ ProcessManager = ProcessManager()
 
 # Initialize bot
 bot = Client("bot", api_id=CONFIG.apiID, api_hash=CONFIG.apiHASH, bot_token=CONFIG.botTOKEN, plugins= dict(root="bot/plugins"), alt_port=True)
+
+# Initialize strings
+strings = Translator()
+

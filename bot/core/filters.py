@@ -2,12 +2,16 @@ import json
 
 from pyrogram import filters
 from pyrogram.errors import UserNotParticipant
-
+from pyrogram.enums import ChatType
 from ..core import database as db
 from ..core.shared import CONFIG
 
 
-async def user_check(c, __, msg):
+async def user_check(_, c, msg):
+  #if msg.chat.type:
+  if not msg.chat.type== ChatType.PRIVATE:
+    return False
+  
   json_object = json.loads(f"{msg}")
   instance = json_object["_"]
 
@@ -30,11 +34,12 @@ async def user_check(c, __, msg):
       return True
   
   user_pass = False
-  
+
   if bool(CONFIG.settings["force_sub"]):
     try:
       await c.get_chat_member('theostrich', userID)
       user_pass = True
+      
     except UserNotParticipant:
       user_pass = False
   else:
