@@ -93,9 +93,6 @@ force_sub_txt: |-
 force_sub_btn: |-
    [Subscribe](url::{channel_url})
 
-#plugins/admin
-
-#plugins/mailable
 sponsor_txt: |-
    **Our sponsor list:**
      >> [Ž€ ₣ΔŁĆØŇ](https://t.me/Ze_Falcon)
@@ -103,6 +100,36 @@ sponsor_txt: |-
    __Help us by sponsoring a domain or [buy us a cup of tea](https://ko-fi.com/rabbitfored/) and become one of the premium members.__
 
 
+#plugins/admin
+
+#plugins/mailable
+select_mail_txt: |-
+   **Select a mail:**
+select_mail_btn: |-
+   [{mailID}](data::{action}_{mailID})
+
+mail_info_txt: |-
+   **
+   Mail  : {mailID}
+   Owner : {owner}
+   **
+mail_info_action_btn: |-
+   [Transfer](data::tr_{mailID})
+   [Delete](data::dl_{mailID})
+no_mails_txt: |-
+   **You don't own any mail.\nUse /generate to get a new mail.**
+
+
+
+
+
+
+
+
+
+
+
+   
 #disabled features
 # /send : Send a mail 
 # /block : Block a mail
