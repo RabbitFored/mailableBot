@@ -12,19 +12,30 @@ authors:
 #commons
 start_txt: |-
    **Hello {user} 👋 !
-   I am a simple Telegram Bot.\n
-   Hit /help to know more on using me.**
+   \nI am a mail bot. You can use me to send or receive mails.
+   \nHit help to know more on using me.**
 start_btn: |-
-   [HELP](data::ct_help)
+   [HELP](data::cf_commons.get_help)
 
 help_txt: |-
    **Here is an detailed guide on using me.**
 
    **Available Commands:**
-   /start : Check if I am alive
-   /help : Send you this text!
+   /start : Check if I am alive!
+   /help : Send you this text
+
+   /generate : generates a random mail
+   /set <mail> : Set mail to your
+      Eg: `/set foo@mail.bruva.co`
+
+   /mails  : List your mails
+   /delete : Release a mail id
+   /transfer: Tranfers a mail
+
+   /domains : List of available domain
+   /sponsors : Check our sponsors
    /about : About me
-   /donate : Donate us
+   /donate : Donate us.
 help_btn: |-
    [Get Help](url::{group_url})
 ##extended help msg for bot administrators
@@ -32,6 +43,8 @@ admin_help_txt: |-
    **Administrator Commands:**
    /broadcast : Broadcast a message to all users      
    /stats : Check stats of your bot
+   /whois : Check mail informaton
+   /user : Check user info
 
 about_txt: |+
    **About Me :**
@@ -81,3 +94,17 @@ force_sub_btn: |-
    [Subscribe](url::{channel_url})
 
 #plugins/admin
+
+#plugins/mailable
+sponsor_txt: |-
+   **Our sponsor list:**
+     >> [Ž€ ₣ΔŁĆØŇ](https://t.me/Ze_Falcon)
+
+   __Help us by sponsoring a domain or [buy us a cup of tea](https://ko-fi.com/rabbitfored/) and become one of the premium members.__
+
+
+#disabled features
+# /send : Send a mail 
+# /block : Block a mail
+# /unblock : Unblock a mail
+# /blocks : Check your current blocklist
