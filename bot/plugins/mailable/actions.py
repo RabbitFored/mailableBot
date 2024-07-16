@@ -37,7 +37,7 @@ async def mail_action(client, message):
 async def generate(client, message): 
     user = db.get_user(message.from_user.id)
 
-    mailIDs = user.data['mails']
+    mailIDs = user.data.get('mails', [])
     limits = user.get_limits()
 
     if len(mailIDs) >= limits["max_mails"]:
