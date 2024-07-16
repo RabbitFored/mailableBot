@@ -1,9 +1,8 @@
 from pyrogram import Client, filters
-from mailable.core import utils
-from mailable.core import database as db
-from mailable.plugins.filters import group
+from bot.core import database as db
 
-@Client.on_message(filters.command(["whois"]) & group("admin") )
+
+@Client.on_message(filters.command(["whois"]) )
 async def whois(client, message):
   args = message.text.split(" ")
 
