@@ -10,4 +10,4 @@ async def whois(client, message):
   mailID = args[1]
   user = db.find_user(mailID)
   print(user.ID)
-  await message.reply_text(f'Mail {mailID} belongs to `{user.ID}`
+  await message.reply_text(f'Mail {mailID} belongs to `{user.ID}`')
