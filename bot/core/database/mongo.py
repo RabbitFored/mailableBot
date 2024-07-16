@@ -90,7 +90,7 @@ def data_exists(data):
   cursor = list(botdata.find(query))
   return bool(cursor)
 
-def find_data(data):
+def find_user(data):
   query = {f'data.{key}': value for key, value in data.items()}
   userdata = botdata.find_one(query)
   if userdata:
