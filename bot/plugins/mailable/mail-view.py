@@ -1,6 +1,6 @@
 from bot import bot, web
 import os
-from utils import strip_script_tags
+from bot.core.utils import strip_script_tags
 from quart import render_template
 
 @web.route('/inbox/<user>/<id>')
