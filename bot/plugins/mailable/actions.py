@@ -3,7 +3,7 @@ from bot.core import database as db
 from bot import strings, CONFIG
 from bot.core.utils import generate_keyboard, gen_rand_string
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
-from pyrogram.enums import MessageEntityType
+from pyrogram.enums import MessageEntityType, ListenerTypes
 
 async def no_mails(message):
     text = strings.get("no_mails_txt")
@@ -56,21 +56,20 @@ async def generate(client, message):
     for domain in domains:
         buttons.append([InlineKeyboardButton(domain, f"{domain}")])
 
-    k = await message.chat.ask(text="**Select a domain:**",
-                        disable_web_page_preview=True,
-                        reply_markup=InlineKeyboardMarkup(buttons))
+    ask_dom = await message.chat.ask("**Select a domain:**",reply_markup=InlineKeyboardMarkup(buttons),listener_type =ListenerTypes.CALLBACK_QUERY )
+   
+    domain = ask_dom.data
+    if domain not in domains:
+        await message.reply("**Invalid domain.**")
+        return
     
-    callback_query = await client.wait_for_callback_query(message.from_user.id)
-    await callback_query.answer()
-
-    domain = callback_query.data
     mailID = gen_rand_string(8).lower() + "@" + domain
 
     user.data.addToSet({"mails": mailID})
 
-    await callback_query.message.reply_text(
+    await ask_dom.message.reply_text(
         f"Mail Created successfully.\nYour mail id : {mailID}\nNow You can access your mails here.")
-    await callback_query.message.delete()
+
 
 
 @Client.on_message(filters.command(["set"]))
@@ -127,4 +126,52 @@ async def set_mail(client, message):
   await message.reply_text(
           f"Mail Created successfully.\nYour mail id : {mailID}\nNow You can access your mails here."
         )
+
+
+async def transfer_mail(client, message, mail):
+  recipient = await message.chat.ask("**Please enter new owners username**")
+  args = recipient.text.split(" ")
+  if not args[0].startswith("@"):
+    await message.reply_text(
+      "**Provide a valid Username. Use /transfer to restart this process**")
+    return
+  try:
+    await client.send_message(
+      args[0],
+      f"**Incoming mail transfer request for {mail} by {message.reply_to_message.from_user.mention()}**"
+    )
+  except:
+    await message.reply_text(
+      f"**Cannot transfer {mail} to {args[0]}.\nBe sure that the user started me.**"
+    )
+    return
   
+  user1 =  db.get_user(recipient.from_user.id)
+  user2 = db.get_user(args[0])
+
+  mailIDs = user2.data.get("mails", [])
+
+  limits = user2.get_limits()
+  max_mails = limits["max_mails"]
+
+  if len(mailIDs) >= max_mails:
+    await message.reply_text(
+      f"**Cannot transfer {mail} to {args[0]}.\nThis user had exhausted free mail limits.**"
+    )
+    return
+  data = { "mails" : mail.lower() }
+  user1.data.rm(data)
+  user2.data.addToSet(data)
+
+  await client.send_message(
+    args[0], f'''
+**New mail transferred to your account.
+
+`Mail `: {mail}
+`Transferred by :` {message.reply_to_message.from_user.mention()}
+
+Check your mails using /mails command.**''')
+  await message.reply_text(
+    f"**Successfully transferred {mail} to {recipient.text}")
+
+
