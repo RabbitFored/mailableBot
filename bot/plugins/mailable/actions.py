@@ -18,6 +18,8 @@ async def mail_action(client, message):
     command = message.text.split(" ")[0][1:]
     actions = {"mails": "info", "transfer": "tr", "delete": "dl"}
 
+    r = "m"
+
     if len(mailIDs) == 0:
         await no_mails(message)
         return
@@ -27,8 +29,9 @@ async def mail_action(client, message):
     for mailID in mailIDs:
         btn = strings.get("select_mail_btn",
                           mailID=mailID,
-                          action=actions[command])
+                          action=actions[command],r=r)
         btns += f"{btn}\n"
+    print(btns)
     keyboard = generate_keyboard(btns)
     await message.reply_text(text, reply_markup=keyboard, quote=True)
 

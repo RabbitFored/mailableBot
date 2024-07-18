@@ -1,5 +1,4 @@
 import re
-import dns.resolver
 from ..user import USER
 
 def strip_script_tags(page):

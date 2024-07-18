@@ -17,13 +17,19 @@ async def adddomain(client, message):
         return
 
     domain = await message.chat.ask('Send me your domain name')
+    
+    dataExists = db.data_exists({'domains': domain.text})
+    if dataExists:
+            await client.send_message(message.chat.id,
+                                       "Sorry this domain is unavailable")
+            return
     mail_servers = utils.get_mx_server(domain.text)
-
+    
     if "mx.bruva.co" in mail_servers:
         status = "▶"
         await message.reply("Domain verified")
         data = {"domains": domain.text}
-        user.data.addToSet(message.from_user.id, data)
+        user.data.addToSet( data)
     else:
         status = "❌"
         text = f'''
@@ -38,3 +44,25 @@ Add MX Record:
                                     text="Check Status",
                                     callback_data=f"chstatus_{domain.text}")
                             ]])))
+
+@Client.on_message(filters.command(["rmdomains" , "rmdomain"]))
+async def rmdomains(client, message):
+     user = db.get_user(message.from_user.id)
+
+     if user.subscription["name"] == "premium":
+         user_domains = user.data.get("domains", [])
+         if len(user_domains) == 0:
+             await message.reply_text("No domains found.")
+         else:
+              btn = ""
+              for domain in user_domains:
+                btn += f"[{domain}](data::dl_d:{domain})\n"
+
+              keyboard = utils.generate_keyboard(btn)
+
+              await message.reply_text(
+                    "Your domains:",
+                    disable_web_page_preview=True,
+                    reply_markup=keyboard,
+                    quote=True,
+                )

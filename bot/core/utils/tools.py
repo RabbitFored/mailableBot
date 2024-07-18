@@ -1,5 +1,6 @@
 from ..shared import CONFIG
 import requests
+import dns.resolver
 
 def botapi(method, data):
   baseURL = f"https://api.telegram.org/bot{CONFIG.botTOKEN}/"

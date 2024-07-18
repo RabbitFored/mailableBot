@@ -106,7 +106,7 @@ sponsor_txt: |-
 select_mail_txt: |-
    **Select a mail:**
 select_mail_btn: |-
-   [{mailID}](data::{action}_{mailID})
+   [{mailID}](data::{action}_{r}:{mailID})
 
 mail_info_txt: |-
    **
@@ -115,7 +115,16 @@ mail_info_txt: |-
    **
 mail_info_action_btn: |-
    [Transfer](data::tr_{mailID})
-   [Delete](data::dl_{mailID})
+   [Delete](data::dl_m:{mailID})
+   
+domain_info_txt: |-
+      **
+      Domain  : {mailID}
+      Owner : {owner}
+      **
+domain_info_action_btn: |-
+      [Delete](data::dl_d:{mailID})
+   
 no_mails_txt: |-
    **You don't own any mail.\nUse /generate to get a new mail.**
 
