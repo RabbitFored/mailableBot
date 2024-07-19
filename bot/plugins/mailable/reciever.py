@@ -28,9 +28,13 @@ async def secretmessages():
   content = data['html'][0] if data['html'] else data['text'][0]
 
  # data = json.loads((await request.form).get("data"))
-  print(data['to'])
-  userID = db.find_user(
-    {"mails": data['to'][0][1]}).ID
+  
+  user = db.find_user(
+    {"mails": data['to'][0][1]})
+  if user:
+    userID = user.ID
+  else:
+    return "user not found"
 
   f = open("inbox.html", "w")
   f.write(str(content))
