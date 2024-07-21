@@ -1,9 +1,9 @@
-from caprover_api import CaproverAPI
+from caprover_api import caprover_api
 import os
 from pyrogram import Client, filters
 from bot.core import filters as fltr
 
-cap = CaproverAPI(
+cap = caprover_api.CaproverAPI(
     dashboard_url= os.environ['cap_url'],
     password= os.environ['cap_password']
 )
@@ -18,5 +18,5 @@ def redeploy_app_via_api(app_name):
 @Client.on_message(filters.command("deploy") & fltr.group("admin"))
 async def set_log_level(client, message):
     print("redeploying")
-    redeploy_app_via_api("cap_app_name")
-    
+    redeploy_app_via_api(os.environ['cap_app_name'])
+
