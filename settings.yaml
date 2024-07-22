@@ -27,7 +27,7 @@ subscriptions:
           validity: "3,month"
 
       limits:
-        max_mails: 5
+        max_mails: 7
         custom_domains: true
         send: true
 
@@ -46,7 +46,7 @@ links:
   repo_url: "https://github.com/RabbitFored/mailable"
 
 extras:
-  domains: ['mail.bruva.co']
+  domains: ['mail.bruva.co', '4qnt.us']
   reserved_keyword : [
     'admin', 'owner', 'contact', 'support', 'donate', 'postmaster', 'message',
     'ostrich', 'administrator', 'access', 'account', 'mail', 'email', 'patner',
