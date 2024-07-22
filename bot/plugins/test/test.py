@@ -54,8 +54,4 @@ async def test(client, message):
     
 @Client.on_message(filters.command(["test2"]))
 async def test2(client, message):
-    user_language = "en"
-    strings = Translator(lang=user_language)
-    greeting_message = strings.get("greeting")
-    btn = strings.get("start_btn")
-    await message.reply(greeting_message, reply_markup=generate_keyboard(btn))
+    await message.reply("greeting_message, reply_markup=generate_keyboard(btn)")
