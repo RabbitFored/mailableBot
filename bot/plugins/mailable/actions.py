@@ -60,8 +60,11 @@ async def generate(client, message):
         buttons.append([InlineKeyboardButton(domain, f"{domain}")])
 
     ask_dom = await message.chat.ask("**Select a domain:**",reply_markup=InlineKeyboardMarkup(buttons),listener_type =ListenerTypes.CALLBACK_QUERY )
-   
+    if not ask_dom.message.id == ask_dom.sent_message.id:
+      await message.reply("Callback query intreption. Try again")
+      return
     domain = ask_dom.data
+    
     if domain not in domains:
         await message.reply("**Invalid domain.**")
         return
@@ -78,7 +81,7 @@ async def generate(client, message):
 @Client.on_message(filters.command(["set"]))
 async def set_mail(client, message):
   user = db.get_user(message.from_user.id)
-  mailIDs = user.data['mails']
+  mailIDs = user.data.get('mails', [])
   limits = user.get_limits()
 
   if len(mailIDs) >= limits["max_mails"]:
@@ -132,6 +135,11 @@ async def set_mail(client, message):
 
 
 async def transfer_mail(client, message, mail):
+  id , domain = mail.split("@")
+  domains = CONFIG.settings["extras"]["domains"]
+  if not domain in domains:
+    await message.chat.ask("**Cannot transfer this mail**")
+    return
   recipient = await message.chat.ask("**Please enter new owners username**")
   args = recipient.text.split(" ")
   if not args[0].startswith("@"):

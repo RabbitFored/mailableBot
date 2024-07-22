@@ -36,6 +36,12 @@ help_txt: |-
    /sponsors : Check our sponsors
    /about : About me
    /donate : Donate us.
+
+   **Premium features:**
+   /adddomain: Add a custom domain
+   /rmdomain: Remove a custom domain
+   /send: send mail
+
 help_btn: |-
    [Get Help](url::{group_url})
 ##extended help msg for bot administrators
