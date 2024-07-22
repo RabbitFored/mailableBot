@@ -54,4 +54,4 @@ async def test(client, message):
     
 @Client.on_message(filters.command(["test2"]))
 async def test2(client, message):
-    await message.reply("greeting_message, reply_markup=generate_keyboard(btn)")
+    await message.reply("g")
