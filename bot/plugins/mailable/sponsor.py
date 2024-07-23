@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-
+from bot import strings
 
 @Client.on_message(filters.command(["sponsors"]))
 async def sponsors(client, message):
