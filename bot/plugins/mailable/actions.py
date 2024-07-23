@@ -161,7 +161,11 @@ async def transfer_mail(client, message, mail):
   user2 = db.get_user(args[0])
 
   mailIDs = user2.data.get("mails", [])
-
+  if not mail in user1.data.get("mails", []):
+    await message.reply_text(
+      f"**Mail didnt exist**"
+    )
+    return
   limits = user2.get_limits()
   max_mails = limits["max_mails"]
 

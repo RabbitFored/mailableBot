@@ -32,6 +32,8 @@ help_txt: |-
    /delete : Release a mail id
    /transfer: Tranfers a mail
 
+   /premium : Get premium subscription
+   
    /domains : List of available domain
    /sponsors : Check our sponsors
    /about : About me
@@ -41,6 +43,7 @@ help_txt: |-
    /adddomain: Add a custom domain
    /rmdomain: Remove a custom domain
    /send: send mail
+   
 
 help_btn: |-
    [Get Help](url::{group_url})
