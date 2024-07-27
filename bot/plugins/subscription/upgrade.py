@@ -8,7 +8,7 @@ from bot import strings, logger
 @Client.on_message(filters.command(["premium", "subscribe"]))
 async def premium(client, message):
   
-  pre_text = strings.get("premium_msg")
+  pre_text = strings.get("premium_txt")
   btn = strings.get("premium_btn")
   
   keyboard = generate_keyboard(btn)
@@ -19,7 +19,6 @@ async def premium(client, message):
       reply_markup=keyboard,
       quote=True,
   )
-
 
 @Client.on_message(filters.command(["upgrade"]))
 async def upgrade(client, message):
