@@ -1,32 +1,23 @@
 import logging
 from .. import utils
 from ..shared import CONFIG
+from .handlers import TelegramHandler
 
 
-class TelegramHandler(logging.Handler):
+formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 
-    def __init__(self, chat_id, level=logging.NOTSET):
-        super().__init__(level)
-        self.chat_id = chat_id
+tg_logger = CONFIG.settings["logs"]["telegram"]
+if tg_logger:
+    root_logger = logging.getLogger()
 
-    def emit(self, record):
-        log_entry = self.format(record)
-        logs = utils.chunkstring(log_entry, 4000)
-        for log in logs:
-            utils.botapi(
-            "sendMessage", {
-                "chat_id": self.chat_id,
-                "text": f"<code>{log}</code>",
-                "message_thread_id": 2,
-                "parse_mode": "html"
-            })
-
-
-LOG_CHANNEL = CONFIG.settings.get("LOG_CHANNEL", None)
-if LOG_CHANNEL:
-    tgHandler = TelegramHandler(chat_id=LOG_CHANNEL)
-    tgHandler.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-    tgHandler.setFormatter(formatter)
-else:
-    tgHandler = None
+    log_chat = tg_logger.get("chat", None)
+    if log_chat:
+        log_thread = tg_logger.get("thread", None)
+        chunk = tg_logger.get("chunk", 4000)
+        tgHandler = TelegramHandler(chat_id=log_chat,thread_id=log_thread, chunk=chunk)
+        tgHandler.setFormatter(formatter)
+        tgHandler.setLevel(logging.INFO)
+        root_logger.addHandler(tgHandler)
+    else:
+        root_logger.warn("No chat ID for logging")
+        
