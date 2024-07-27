@@ -72,6 +72,7 @@ async def generate(client, message):
     mailID = gen_rand_string(8).lower() + "@" + domain
 
     user.data.addToSet({"mails": mailID})
+    db.statial("mails",1)
 
     await ask_dom.message.reply_text(
         f"Mail Created successfully.\nYour mail id : {mailID}\nNow You can access your mails here.")
@@ -128,7 +129,8 @@ async def set_mail(client, message):
         await client.send_message(message.chat.id,
                                    "Sorry this mail ID is unavailable")
         return
-  user.data.addToSet({'mails':mailID})    
+  user.data.addToSet({'mails':mailID})  
+  db.statial("mails",1)
   await message.reply_text(
           f"Mail Created successfully.\nYour mail id : {mailID}\nNow You can access your mails here."
         )

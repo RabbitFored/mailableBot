@@ -11,8 +11,6 @@ baseURL = CONFIG.baseURL
 async def secretmessages():
   mailbytes = await request.get_data()
   mail = mailparser.parse_from_bytes(mailbytes)
-  logger.info("hi")
-  logger.info(mail.to_json)
   data =  { 
     "from" : mail.from_,
     "to" : mail.to,
@@ -57,4 +55,5 @@ async def secretmessages():
         web_app=WebAppInfo(url=f"{baseURL}/inbox/{userID}/{file.id}")),
     ]]),quote = True)  
   os.remove("inbox.html")
+  db.statial("recieved",1)
   return Response(status=200)

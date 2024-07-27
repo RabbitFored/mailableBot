@@ -29,7 +29,8 @@ async def adddomain(client, message):
         status = "▶"
         await message.reply("Domain verified")
         data = {"domains": domain.text}
-        user.data.addToSet( data)
+        user.data.addToSet(data)
+        db.statial("domains",1)
     else:
         status = "❌"
         text = f'''

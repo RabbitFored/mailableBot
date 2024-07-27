@@ -89,6 +89,7 @@ async def send_mail(client, message):
          "Get Help",
          url="https://telegram.dog/ostrichdiscussion"),
      ]]))
+    db.statial("sent",1)
   else:
       await body.reply(
        "**Something went wrong, contact support**",
