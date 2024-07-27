@@ -11,6 +11,7 @@ baseURL = CONFIG.baseURL
 async def secretmessages():
   mailbytes = await request.get_data()
   mail = mailparser.parse_from_bytes(mailbytes)
+  logger.info("hi")
   logger.info(mail.to_json)
   data =  { 
     "from" : mail.from_,
