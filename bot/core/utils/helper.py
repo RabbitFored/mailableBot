@@ -1,5 +1,4 @@
 import re
-from ..user import USER
 
 def strip_script_tags(page):
     pattern = re.compile(r'\s?on\w+="[^"]+"\s?')

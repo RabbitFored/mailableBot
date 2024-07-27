@@ -5,7 +5,6 @@ from quart import render_template
 
 @web.route('/inbox/<user>/<id>')
 async def inbox(user, id):
-  print(user, id)
   m = await bot.get_messages(int(user), int(id))
   file = await m.download()
   f = open(file, "r")
