@@ -45,8 +45,8 @@ async def secretmessages():
   with tempfile.TemporaryDirectory(prefix=f"{userID}_") as temp_dir:
     temp_file_path = os.path.join(temp_dir, 'inbox.html')
     with open(temp_file_path, 'w') as temp_file:
+      logger.info(content)
       temp_file.write(content)
-
       file = await bot.send_document(chat_id=userID, document=temp_file_path)
       await file.reply(text=text,
                        reply_markup=InlineKeyboardMarkup([[
