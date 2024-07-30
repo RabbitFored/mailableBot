@@ -47,7 +47,7 @@ async def secretmessages():
     with open(temp_file_path, 'w') as temp_file:
       temp_file.write(content)
 
-      file = await bot.send_document(chat_id=userID, document="inbox.html")
+      file = await bot.send_document(chat_id=userID, document=temp_file_path)
       await file.reply(text=text,
                        reply_markup=InlineKeyboardMarkup([[
                            InlineKeyboardButton(
