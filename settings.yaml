@@ -73,7 +73,7 @@ broadcast:
 
 
 MongoDB:
-  database: tesseract
+  database: mailable
 
 links:
   channel_url: "t.me/theostrich"
