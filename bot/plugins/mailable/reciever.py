@@ -12,8 +12,15 @@ baseURL = CONFIG.baseURL
 
 @web.route('/cust', methods=['POST'])
 async def secretmessages():
+  logger.info("new mail")
   mailbytes = await request.get_data()
+  logger.info("mailbytes")
+  logger.info(str(mailbytes))
+  logger.info(mailbytes)
   mail = mailparser.parse_from_bytes(mailbytes)
+  logger.info("mail")
+  logger.info(mail)
+  logger.info("data")
   data = {
       "from": mail.from_,
       "to": mail.to,
@@ -58,3 +65,5 @@ async def secretmessages():
                        quote=True)
   db.statial("recieved", 1)
   return Response(status=200)
+
+This is my code , when I recieved long mail it works, but if I send short mail text using gmail it doesnt, everything is empy
