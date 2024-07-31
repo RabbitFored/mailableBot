@@ -65,5 +65,3 @@ async def secretmessages():
                        quote=True)
   db.statial("recieved", 1)
   return Response(status=200)
-
-This is my code , when I recieved long mail it works, but if I send short mail text using gmail it doesnt, everything is empy
