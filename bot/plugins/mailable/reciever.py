@@ -5,6 +5,7 @@ from bot.core import database as db
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 import os
 import tempfile
+import aiofiles
 
 baseURL = CONFIG.baseURL
 
@@ -25,7 +26,7 @@ async def secretmessages():
       "reply_to": mail.reply_to,
       "message_id": mail.message_id
   }
-
+  logger.info(data)
   content = data['html'][0] if data['html'] else data['text'][0]
 
   # data = json.loads((await request.form).get("data"))
@@ -44,9 +45,8 @@ async def secretmessages():
 
   with tempfile.TemporaryDirectory(prefix=f"{userID}_") as temp_dir:
     temp_file_path = os.path.join(temp_dir, 'inbox.html')
-    with open(temp_file_path, 'w') as temp_file:
-      logger.info(content)
-      temp_file.write(content)
+    async with aiofiles.open(temp_file_path, 'w') as temp_file:
+      await temp_file.write(content)
       file = await bot.send_document(chat_id=userID, document=temp_file_path)
       await file.reply(text=text,
                        reply_markup=InlineKeyboardMarkup([[
