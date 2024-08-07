@@ -1,15 +1,22 @@
 import json
 
 from pyrogram import filters
-from pyrogram.errors import UserNotParticipant, ChatAdminRequired
 from pyrogram.enums import ChatType
+from pyrogram.errors import ChatAdminRequired, UserNotParticipant
+
+from ..core import antiflood, logger
 from ..core import database as db
 from ..core.shared import CONFIG
-from ..core import logger
+
 
 async def user_check(_, c, msg):
   #if msg.chat.type:
-  if not msg.chat.type == ChatType.PRIVATE:
+  
+  #set self
+  if not CONFIG.me:
+    CONFIG.me = await c.get_me()
+  
+  if msg.chat.type != ChatType.PRIVATE:
     return False
   
   json_object = json.loads(f"{msg}")
@@ -24,25 +31,46 @@ async def user_check(_, c, msg):
   else:
     logger.warn(instance)
     return False
-  me = await c.get_me()
-  
-  if userID == me.id:
+
+  #allow self without filters
+  if userID == CONFIG.me.id:
     return False
   
-  user = db.get_user(userID)
+  #allowed groups and subscribers
+  allowed_groups = CONFIG.settings["filters"]["exclude"].get("groups", [])
+  allowed_subscriptions = CONFIG.settings["filters"]["exclude"].get("subscriptions", [])
 
+  allowed_users = []
+  for group in allowed_groups:
+    allowed_users.extend(CONFIG.settings["groups"][group])
+    
+  if userID in allowed_users or user.subscription["name"]:
+    return False
+    
+  user = db.get_user(userID)
+  
   if not user:
     db.add_user(msg)
   else:
     user.refresh(msg)
     if bool(user.is_banned):
       return True
+
+  if user.subscription["name"] in allowed_subscriptions:
+    return False
+
+  
+  if antiflood and antiflood.is_flooding(userID):
+    user.warn()
+    antiflood.flush_user(userID)
+    return
   
   user_pass = False
+  
 
-  if bool(CONFIG.settings["force_sub"]):
+  if bool(CONFIG.settings["fliters"]["force_sub"]):
+    chat = CONFIG.settings["fliters"]["force_sub"].get("chats")[0]
     try:
-      chat = CONFIG.settings["FORCE_SUB_CHANNEL"]
       await c.get_chat_member(chat, userID)
       user_pass = True
     

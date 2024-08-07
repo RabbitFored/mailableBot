@@ -1,7 +1,6 @@
 # Create and configure logger
-
 import logging
-
+from .handlers import handlers
 from ..shared import CONFIG
 
 logging.basicConfig(
@@ -13,16 +12,27 @@ logging.basicConfig(
 # Initialize tgbot logger
 logger = logging.getLogger('tgbot')
 
+root_logger = logging.getLogger()
 
 #set levels
 myloggers = CONFIG.settings["logging"]["loggers"]
-for name in logging.root.manager.loggerDict:
-    if myloggers.get(name, None):
-        level = myloggers[name].get("level","INFO")
-        logging.getLogger(name).setLevel(logging._nameToLevel[level.upper()])
 
+for col in myloggers:
+    names = col.split(",")
+    for name in names:
+        name = name.strip()
+        tlogger = logging.getLogger(name)
+        
+        #Set level
+        tlevel = myloggers[col].get("level","INFO")
+        tlogger.setLevel(logging._nameToLevel[tlevel.upper()])
 
-root_logger = logging.getLogger()
-level = myloggers["root"].get("level","INFO")
-root_logger.setLevel(logging._nameToLevel[level.upper()])
-
+        #Set handlers    
+        thandlers = myloggers[col].get("handlers", [])
+        for thandler in thandlers:
+            thandler = thandler.strip()
+            if thandler in handlers:
+                tlogger.addHandler(handlers[thandler])
+            else:
+                root_logger.warn("Skipping Unknown handler: %s", thandler)
+            
