@@ -6,6 +6,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInf
 import os
 import aiofiles
 import tempfile
+from pyrogram.errors import InputUserDeactivated, UserIsBlocked
 
 baseURL = CONFIG.baseURL
 
@@ -34,10 +35,10 @@ async def secretmessages():
   # data = json.loads((await request.form).get("data"))
 
   user = db.find_user({"mails": data['to'][0][1]})
-  if user:
-    userID = user.ID
-  else:
+  if not user:
     return "user not found"
+  if user.status == "inactive":
+    return "inactive user"
   text = f"\
   **Sender     :** {data['from'][0][1]}\n\
   **Recipient  :** {data['to'][0][1]}\n\
@@ -45,19 +46,25 @@ async def secretmessages():
   **Message    :** \n...\
   "
 
-  with tempfile.TemporaryDirectory(prefix=f"{userID}_") as temp_dir:
+  with tempfile.TemporaryDirectory(prefix=f"{user.ID}_") as temp_dir:
       temp_file_path = os.path.join(temp_dir, 'inbox.html')
       async with aiofiles.open(temp_file_path, 'w') as temp_file:
         await temp_file.write(content)
         await temp_file.close()
-      file = await bot.send_document(chat_id=userID, document=temp_file_path)
-      await file.reply(text=text,
+      try:
+        file = await bot.send_document(chat_id=user.ID, document=temp_file_path)
+        await file.reply(text=text,
                        reply_markup=InlineKeyboardMarkup([[
                            InlineKeyboardButton(
                                "View mail",
                                web_app=WebAppInfo(
-                                   url=f"{baseURL}/inbox/{userID}/{file.id}")),
+                                   url=f"{baseURL}/inbox/{user.ID}/{file.id}")),
                        ]]),
                        quote=True)
+      except UserIsBlocked:
+        user.setStatus("inactive")
+      except InputUserDeactivated:
+        db.delete_user(user.ID)
+
   db.statial("recieved", 1)
   return Response(status=200)
