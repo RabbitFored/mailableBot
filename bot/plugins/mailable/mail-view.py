@@ -16,7 +16,7 @@ async def inbox(user, id):
       temp_file_path = os.path.join(temp_dir, 'mail')
       await media.download(temp_file_path)
       async with aiofiles.open(temp_file_path, 'r') as temp_file:
-        content = await temp_file.read()
+        content = temp_file.read()
         nojs = strip_script_tags(content)
         await temp_file.close()
         return await render_template("inbox.html" , content = nojs)
