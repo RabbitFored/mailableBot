@@ -22,5 +22,5 @@ async def inbox(user, id):
         return await render_template("inbox.html" , content = nojs)
   except ValueError:
     await bot.send_message(int(user), "File not found")
-    return Response(status=404)
+    return "File not found"
   
