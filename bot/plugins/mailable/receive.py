@@ -1,4 +1,4 @@
-from bot import web, bot, CONFIG
+from bot import web, bot, CONFIG, logger
 from quart import request, Response
 import mailparser
 from bot.core import database as db
@@ -13,7 +13,7 @@ baseURL = CONFIG.baseURL
 
 @web.route('/cust', methods=['POST'])
 async def secretmessages():
-  
+ try:
   mailbytes = await request.get_data()
   mail = mailparser.parse_from_bytes(mailbytes)
 
@@ -34,7 +34,7 @@ async def secretmessages():
 
   # data = json.loads((await request.form).get("data"))
 
-  user = db.find_user({"mails": data['to'][0][1]})
+  user = await db.find_user({"mails": data['to'][0][1]})
   if not user:
     return "user not found"
   if user.status == "inactive":
@@ -64,7 +64,10 @@ async def secretmessages():
       except UserIsBlocked:
         user.setStatus("inactive")
       except InputUserDeactivated:
-        db.delete_user(user.ID)
+        await db.delete_user(user.ID)
 
-  db.statial("recieved", 1)
+  await db.inc_stat("recieved", 1)
   return Response(status=200)
+ except Exception as e:
+   logger.error(f"Something went wrong: {e}")
+   return "something went wrong"

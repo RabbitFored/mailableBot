@@ -35,14 +35,14 @@ async def dl_mail(client, query):
     data = query.data.split("_")[1]
 
     r = data.split(":")[0]
-    user = db.get_user(query.message.reply_to_message.from_user.id)
+    user = await db.get_user(query.message.reply_to_message.from_user.id)
     if r == "m":
         mailID= data.split(":")[1]
-        user.data.rm({"mails": mailID})
+        await user.data.rm({"mails": mailID})
         await query.message.edit_text("**Mail deleted successfully**")
     else:
         domain = data.split(":")[1]
-        user.data.rm({"domains": domain})
+        await user.data.rm({"domains": domain})
         await query.message.edit_text("**Domain deleted successfully**")
 
 @Client.on_callback_query(fltr.on_marker("tr"))

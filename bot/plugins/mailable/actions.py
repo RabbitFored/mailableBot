@@ -12,7 +12,7 @@ async def no_mails(message):
 
 @Client.on_message(filters.command(["mails", "transfer", "delete"]))
 async def mail_action(client, message):
-    user = db.get_user(message.from_user.id)
+    user = await db.get_user(message.from_user.id)
     mailIDs = user.data.get("mails", [])
 
     command = message.text.split(" ")[0][1:]
@@ -31,14 +31,13 @@ async def mail_action(client, message):
                           mailID=mailID,
                           action=actions[command],r=r)
         btns += f"{btn}\n"
-    print(btns)
     keyboard = generate_keyboard(btns)
     await message.reply_text(text, reply_markup=keyboard, quote=True)
 
 
 @Client.on_message(filters.command(["generate"]))
 async def generate(client, message): 
-    user = db.get_user(message.from_user.id)
+    user = await db.get_user(message.from_user.id)
 
     mailIDs = user.data.get('mails', [])
     limits = user.get_limits()
@@ -71,8 +70,8 @@ async def generate(client, message):
     
     mailID = gen_rand_string(8).lower() + "@" + domain
 
-    user.data.addToSet({"mails": mailID})
-    db.statial("mails",1)
+    await user.data.addToSet({"mails": mailID})
+    await db.inc_stat("mails",1)
 
     await ask_dom.message.reply_text(
         f"Mail Created successfully.\nYour mail id : {mailID}\nNow You can access your mails here.")
@@ -81,7 +80,7 @@ async def generate(client, message):
 
 @Client.on_message(filters.command(["set"]))
 async def set_mail(client, message):
-  user = db.get_user(message.from_user.id)
+  user = await db.get_user(message.from_user.id)
   mailIDs = user.data.get('mails', [])
   limits = user.get_limits()
 
@@ -124,13 +123,13 @@ async def set_mail(client, message):
     )
     return
   
-  dataExists = db.data_exists({'mails':mailID})
+  dataExists = await db.data_exists({'mails':mailID})
   if dataExists:
         await client.send_message(message.chat.id,
                                    "Sorry this mail ID is unavailable")
         return
-  user.data.addToSet({'mails':mailID})  
-  db.statial("mails",1)
+  await user.data.addToSet({'mails':mailID})  
+  await db.inc_stat("mails",1)
   await message.reply_text(
           f"Mail Created successfully.\nYour mail id : {mailID}\nNow You can access your mails here."
         )
@@ -159,8 +158,8 @@ async def transfer_mail(client, message, mail):
     )
     return
   
-  user1 =  db.get_user(recipient.from_user.id)
-  user2 = db.get_user(args[0])
+  user1 =  await db.get_user(recipient.from_user.id)
+  user2 = await db.get_user(args[0])
 
   mailIDs = user2.data.get("mails", [])
   if not mail in user1.data.get("mails", []):
@@ -177,8 +176,8 @@ async def transfer_mail(client, message, mail):
     )
     return
   data = { "mails" : mail.lower() }
-  user1.data.rm(data)
-  user2.data.addToSet(data)
+  await user1.data.rm(data)
+  await user2.data.addToSet(data)
 
   await client.send_message(
     args[0], f'''

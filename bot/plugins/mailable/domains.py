@@ -6,7 +6,7 @@ from bot.core import utils
 
 @Client.on_message(filters.command(["adddomain"]))
 async def adddomain(client, message):
-    user = db.get_user(message.from_user.id)
+    user = await db.get_user(message.from_user.id)
 
     if not user.subscription["name"] == "premium":
         await message.reply("You don't have a premium subscription.",
@@ -18,7 +18,7 @@ async def adddomain(client, message):
 
     domain = await message.chat.ask('Send me your domain name')
     
-    dataExists = db.data_exists({'domains': domain.text})
+    dataExists = await db.data_exists({'domains': domain.text})
     if dataExists:
             await client.send_message(message.chat.id,
                                        "Sorry this domain is unavailable")
@@ -29,8 +29,8 @@ async def adddomain(client, message):
         status = "▶"
         await message.reply("Domain verified")
         data = {"domains": domain.text}
-        user.data.addToSet(data)
-        db.statial("domains",1)
+        await user.data.addToSet(data)
+        await db.inc_stat("domains",1)
     else:
         status = "❌"
         text = f'''
@@ -48,7 +48,7 @@ Add MX Record:
 
 @Client.on_message(filters.command(["rmdomains" , "rmdomain"]))
 async def rmdomains(client, message):
-     user = db.get_user(message.from_user.id)
+     user = await db.get_user(message.from_user.id)
 
      if user.subscription["name"] == "premium":
          user_domains = user.data.get("domains", [])

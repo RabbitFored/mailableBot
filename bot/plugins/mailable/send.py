@@ -9,7 +9,7 @@ import os
 @Client.on_message(filters.command(["send"]))
 async def send_mail(client, message):
   
-  user = db.get_user(message.from_user.id)
+  user = await db.get_user(message.from_user.id)
   
   if user.subscription["name"] == "free":
     await message.reply("You discovered a premium feature. Use /premium to upgrade your account.")
@@ -37,7 +37,7 @@ async def send_mail(client, message):
   
   ask_mail = await message.chat.ask("**Select a mail:**",reply_markup=InlineKeyboardMarkup(buttons),listener_type =ListenerTypes.CALLBACK_QUERY)
   
-  if not ask_mail.message.id == ask_mail.sent_message.id:
+  if ask_mail.message.id != ask_mail.sent_message.id:
     await message.reply("Callback query intreption. Try again")
     return
 
@@ -89,7 +89,7 @@ async def send_mail(client, message):
          "Get Help",
          url="https://telegram.dog/ostrichdiscussion"),
      ]]))
-    db.statial("sent",1)
+    await db.inc_stat("sent",1)
   else:
       await body.reply(
        "**Something went wrong, contact support**",
