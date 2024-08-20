@@ -6,5 +6,5 @@ from bot.core import database as db
 async def whois(client, message):
   args = message.text.split(" ")
   mailID = args[1]
-  user = await db.find_user(mailID)
+  user = await db.find_user({"mails": mailID})
   await message.reply_text(f'Mail {mailID} belongs to `{user.ID}`')
