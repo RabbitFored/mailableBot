@@ -1,18 +1,25 @@
 #from mailable import logger, CONFIG, PROCESSES
-from pyrogram import filters, Client
-from bot import logger
+import asyncio
+
+from pyrogram import Client, filters
+from pyrogram.errors import (
+    FloodWait,
+    InputUserDeactivated,
+    PeerIdInvalid,
+    UserIsBlocked,
+)
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+from bot import CONFIG, ProcessManager, logger
 from bot.core import database as db
 from bot.core import filters as fltr
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from bot import ProcessManager, CONFIG
-import asyncio
-from pyrogram.errors import FloodWait, InputUserDeactivated, UserIsBlocked, PeerIdInvalid
+
 
 async def bcast(mode, msg, process):
     process.data["x"] = 0
     process.data["failed"] = 0
     
-    users = db.fetch_all()
+    users = await db.fetch_all_users()
     process.data["total"] = len(users)
     for user in users:
         try:
@@ -31,10 +38,10 @@ async def bcast(mode, msg, process):
             dser.setStatus("inactive")
         except InputUserDeactivated:
             process.data["failed"]+= 1 
-            db.delete_user(user)
+            await db.delete_user(user)
             logger.info(f"removed deactivated user {user} from db")
         except PeerIdInvalid:
-            logger.info(f"{user} : user id invalid\n")
+            logger.info(f"{user} : peer id invalid\n")
             # db.delete_user(user)
         except Exception as e:
             process.data["failed"]+= 1 

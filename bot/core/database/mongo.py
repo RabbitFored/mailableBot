@@ -1,138 +1,261 @@
-from . import usercache, botdata, bot_db
-from bson.objectid import ObjectId
-from .. import utils
 from datetime import datetime, timedelta
 
+from motor.motor_asyncio import AsyncIOMotorClient
 
-def get_user(userID):
-  userinfo = usercache.find_one(utils.make_filter(userID))
-  if userinfo:
-    objInstance = ObjectId(userinfo["_id"])
-    userdata = botdata.find_one({"user": objInstance})
+from .. import utils
+from ..shared import CONFIG
+from .base import BaseDatabase
+
+
+class MongoDB(BaseDatabase):
+
+  def __init__(self, connection_uri):
+    super().__init__(connection_uri)
+    self.client = AsyncIOMotorClient(connection_uri)
+    self.db = self.client[CONFIG.database]
+    self.userinfo = self.client['TELEGRAM']['usercache']
+    self.userdata = self.db['userdata']
+    self.statial = self.db['statial']
+
+  def __repr__(self):
+    return f"tgbot.mongodb(client={self.client})"
+
+  @property
+  def name(self):
+    return "mongo"
+
+  async def server_info(self):
+    return await self.client.server_info()
+
+  async def db_stats(self, database_name):
+    db = self.client[database_name]
+    return await db.command('dbstats')
+
+  async def list_database(self):
+    client = self.client
+    database_names = await client.list_database_names()
+    return database_names
+
+  async def add_user(self, msg):
+    userID = msg.from_user.id
+    userinfo = await self.userinfo.find_one({"userid": userID})
+    userdata = await self.userdata.find_one({"userid": userID})
+    if not userinfo:
+      firstname = msg.from_user.first_name
+      lastname = " " + msg.from_user.last_name if msg.from_user.last_name else ""
+
+      uinfo = {
+          "userid": userID,
+          "name": [firstname + lastname],
+          "username": [msg.from_user.username],
+          "dc": msg.from_user.dc_id if msg.from_user.dc_id else 0,
+          "firstseen": msg.date,
+          "lastseen": msg.date
+      }
+      await self.userinfo.insert_one(uinfo)
+
+    if not userdata:
+      udata = {"userid": userID, "firstseen": msg.date, "lastseen": msg.date}
+      await self.userdata.insert_one(udata)
+    return True
+
+  async def get_user(self, userID=None, username=None, fetch_info=False):
+    
+    key = userID or username
+    
+    if key and (key in self.cache) and ((not fetch_info) or (self.cache[key]["fetch_info"])):
+        return self.cache[key]["user"]
+    
+    userdata = None
+    userinfo = None
+
+    if userID:
+      userdata = await self.userdata.find_one({"userid": userID})
+      if fetch_info:
+        userinfo = await self.userinfo.find_one({"userid": userID})
+    elif username:
+      userinfo = await self.userinfo.find_one({"username": username})
+      if userinfo:
+        userdata = await self.userdata.find_one({"userid": userinfo["userid"]})
+    else:
+      return False
+    
     if userdata:
-      user = utils.generate_user(userinfo, userdata)
+      data = {}
+      data["userid"] = userdata.get("userid")
+      data["is_banned"] = bool(userdata.get("is_banned", False))
+      data["warns"] = userdata.get("warns", 0)
+      data["subscription"] = userdata.get("subscription", {"name": "free"})
+      data["status"] = userdata.get("status", "active")
+      data["data"] = userdata.get("data", {})
+      data["settings"] = userdata.get("settings", {})
+      data["firstseen"] = userdata['firstseen']
+      data["lastseen"] = userdata['lastseen']
+      if userinfo:
+        data["username"] = userinfo['username'][-1] if userinfo[
+            'username'] else ""
+        data["dc"] = userinfo['dc']
+        data["name"] = userinfo['name'][-1] if userinfo['name'] else ""
+        data["is_banned"] = bool(userinfo.get("is_banned", False)) or bool(
+            userdata.get("is_banned", False))
+      user = utils.gen_user(data)
+      u = {"user": user,
+          "fetch_info":fetch_info}
+      self.cache[userID] = u
       return user
     else:
       return None
-  else:
-    return None
 
-def init_userinfo(msg):
-  userID = msg.from_user.id
-  username = msg.from_user.username
-  firstname = msg.from_user.first_name
-  lastname = " " + msg.from_user.last_name if msg.from_user.last_name else ""
-  dc = msg.from_user.dc_id if msg.from_user.dc_id else 0
-  now = msg.date
-  name = firstname + lastname
-  userinfo = {
-    "userid": userID,
-    "name": [name],
-    "username": [username],
-    "dc": dc,
-    #"is_banned": False,
-    #"groups": [],
-    #"enrolls": [1904425008],
-    "firstseen": now,
-    "lastseen": now
-  }
-  r = usercache.insert_one(userinfo)
-  return r
-
-def init_userdata(userObjectID, now):
-  userdata = {
-    "user": userObjectID,
-  #  "status": "active",
-  #  "is_banned": False,
-  #  "warns": 0,
-  #  "subscription": {
-  #     "name": "free",
-  #   },
-  #  "data": {},
-  #    "settings": {},
-    "firstseen": now,
-    "lastseen": now
-  }
-  r = botdata.insert_one(userdata)
-  return r
-  
-def add_user(msg):
-  userID = msg.from_user.id
-  try:
-    userinfo = usercache.find_one(utils.make_filter(userID))
-  except:
+  async def find_user(self, data, fetch_info=False):
+    #if (userID in self.cache) and ((not fetch_info) or (self.cache[userID]["fetch_info"])):
+    #  return self.cache[userID]["user"]
     userinfo = None
+    userdata = None
 
-  if not userinfo:
-    r = init_userinfo(msg)
-    userObjectID = ObjectId(r.inserted_id)
-  else:
-    userObjectID = ObjectId(userinfo["_id"])
-  init_userdata(userObjectID, msg.date)
-  return True
+    userdata = await self.userdata.find_one({
+          f'data.{key}': value
+          for key, value in data.items()
+      })
+    if userdata and fetch_info:
+          userinfo = await self.userinfo.find_one(
+              {"userid": userdata['userid']})
+    else:
+        return False
 
-def update_user(userID, newvalues):
-  userinfo = usercache.find_one(utils.make_filter(userID))
-  filter = {'user': ObjectId(userinfo['_id'])}
-  botdata.update_one(filter, newvalues)
 
-def update_user_info(userID,newvalues):
-  usercache.update_one(utils.make_filter(userID), newvalues )
+    if userdata:
+      data = {}
+      data["userid"] = userdata.get("userid")
+      data["is_banned"] = bool(userdata.get("is_banned", False))
+      data["warns"] = userdata.get("warns", 0)
+      data["subscription"] = userdata.get("subscription", {"name": "free"})
+      data["status"] = userdata.get("status", "active")
+      data["data"] = userdata.get("data", {})
+      data["settings"] = userdata.get("settings", {})
+      data["firstseen"] = userdata['firstseen']
+      data["lastseen"] = userdata['lastseen']
+      if userinfo:
+        
+        data["username"] = userinfo['username'][-1] if userinfo[
+            'username'] else ""
+        data["dc"] = userinfo['dc']
+        data["name"] = userinfo['name'][-1] if userinfo['name'] else "",
+        data["is_banned"] = bool(userinfo.get("is_banned", False)) or bool(
+            userdata.get("is_banned", False))
 
-def fetch_all():
-  userdata = botdata.find({"status": {"$ne": "inactive"}}, {"_id": 0, 'user': 1 })
-  object_ids = [ObjectId(user["user"]) for user in userdata]
-  userinfo = usercache.find({"_id": {"$in": object_ids}} , {"_id": 0, "userid": 1})
-  userIDs = [u["userid"] for u in userinfo]
-  return userIDs
-
-def data_exists(data):
-  query = {f'data.{key}': value for key, value in data.items()}
-  cursor = list(botdata.find(query))
-  return bool(cursor)
-
-def find_user(data):
-  query = {f'data.{key}': value for key, value in data.items()}
-  userdata = botdata.find_one(query)
-  if userdata:
-      userinfo = usercache.find_one({'_id': ObjectId(userdata['user'])})
-      user = utils.generate_user(userinfo, userdata)
+      user = utils.gen_user(data)
+     #caching diabled for find_user:
+     #
+     # u = {"user": user,
+     #     "fetch_info":fetch_info}
+     # self.cache[userID] = u
       return user
-  else:
+    else:
       return None
 
-def update_user_data(userID, method, data):
-  d = {f'data.{key}': value for key, value in data.items()}
-  update_user(userID, { method :  d })
+  async def fetch_all_users(self):
+    userIDs = []
+    cursor = self.userdata.find({"status": {"$ne": "inactive"}}, {"_id": 0, 'userid': 1 })
+    
+    try:
+      async for document in cursor:
+        if document.get("userid", None):
+         userIDs.append(document["userid"])
+    except Exception as e:
+      logger.error(f"An error occurred while fetching users: {e}")
+    return userIDs
+    
+  async def get_stats(self):
+    stats = {}
 
-def delete_user(userID):
-  filter = utils.make_filter(userID)
-  userinfo = usercache.find_one(filter)
-  if userinfo:
-    objInstance = ObjectId(userinfo["_id"])
-    botdata.delete_one({"user": objInstance})
-    usercache.delete_one(filter)
+    total_users = await self.userdata.count_documents({})
+    active_users = await self.userdata.count_documents(
+        {'lastseen': {
+            '$gte': datetime.now() - timedelta(days=7)
+        }})
+
+    stats['total_users'] = total_users
+    stats['active_users'] = active_users
+
+    statial = await self.statial.find_one({}, {"_id": 0})
+    if statial:
+      for stat in statial:
+        stats[stat] = statial[stat]
+    return stats
+
+  async def data_exists(self, data):
+    query = {f'data.{key}': value for key, value in data.items()}
+    cursor = list((await self.userdata.find_one(query)))
+    return bool(cursor)
+
+  async def inc_stat(self, what, how):
+    await self.statial.update_one({}, {"$inc": {what: how}})
     return True
-  else:
-    return False
 
-def statial(what,how):
-  collection = bot_db["statial"]
-  collection.update_one( {}, {"$inc": { what : how }} )
-  return "ok"
+  async def update_user(self, userID, userinfo=None, userdata=None, dmode="$set"):
 
-def get_statial():
-  collection = bot_db["statial"]
-  value = collection.find_one()
-  return value
+    filter = {"userid": userID}
+    
+    if userinfo:
+      username = userinfo.get("username", None)
+      name = userinfo.get("name", None)
 
-def get_active_users():
-  total_users = botdata.count_documents({})
-  active_users = botdata.count_documents({
-      'lastseen': {'$gte': datetime.now() - timedelta(days=7)}
-  })
+      if username:
+        await self.userinfo.update_one(
+            filter,
+            {
+                "$push": {
+                    "username": {
+                        "$each": [username],
+                        "$slice":
+                        -20  # Keep only the last 20 elements in the array
+                    }
+                }
+            })
+        userinfo.pop("username")
+      if name:
+        await self.userinfo.update_one(
+            filter,
+            {
+                "$push": {
+                    "name": {
+                        "$each": [name],
+                        "$slice":
+                        -20  # Keep only the last 20 elements in the array
+                    }
+                }
+            })
+        userinfo.pop("name")
+      await self.userinfo.update_one(filter, {"$set": userinfo})
 
-  return {
-      'total_users': total_users,
-      'active_users': active_users
-  }
+    if userdata:
+      no_recache = ["lastseen"]
+      
+      if len(set(userdata.keys()) - set(no_recache)) > 0 and userID in self.cache:
+        del self.cache[userID]
+        
+      to_pop = []
+      for key, value in userdata.items():
+        if value == "":
+          await self.userdata.update_one(filter, {"$unset": {key: ""}})
+          to_pop.append(key)
+        if key == "data":
+          data = {}
+          for subkey, subvalue in value.items():
+            if subvalue == "":
+              await self.userdata.update_one(filter, {"$unset": {key: ""}})
+            else:
+              data[f'data.{subkey}'] = subvalue
+          await self.userdata.update_one(filter, {dmode: data})
+          to_pop.append(key)
+          
+      for key in to_pop:
+        userdata.pop(key, None) 
+    
+      await self.userdata.update_one(filter, {"$set": userdata})
+
+  async def delete_user(self, userID, clear_info=False):
+    if clear_info:
+      await self.userinfo.delete_one({"userid": userID})
+    await self.userdata.delete_one({"userid": userID})
+    return True

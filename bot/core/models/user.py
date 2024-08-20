@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
-from os import pread
-from ...core import database as db
+from os import pread, uname
+from ..database import db
 from ..shared import CONFIG
 import requests
+import time
 
 class Data(dict):
 
@@ -10,31 +11,30 @@ class Data(dict):
       super().__init__(*args)
       self.userID = userID
 
-   def addToSet(self, value):
-      db.update_user_data(self.userID, "$addToSet", value)
+   async def addToSet(self, value):
+      await db.update_user(userID=self.userID, userdata={"data" : value},dmode="$addToSet")
 
-   def set(self, value):
-      db.update_user_data(self.userID, "$set", value)
+   async def set(self, value):
+      await db.update_user(userID=self.userID, userdata={"data" : value})
 
-   def rm(self, value):
-      db.update_user_data(self.userID, "$pull", value)
+   async def rm(self, value):
+      await db.update_user(userID=self.userID, userdata={"data" : value}, dmode="$pull")
 
 
 class USER:
-
    def __init__(self, data):
-      self.ID = data['userid']
-      self.name = data['name']
-      self.username = data['username']
-      self.dc = data['dc']
-      self.status = data['status']
-      self.is_banned = data['is_banned']
-      self.warns = data['warns']
+      self.ID = data.get('userid', None)
+      self.name =  data.get('name', None)
+      self.username =  data.get('username', None)
+      self.dc = data.get('dc', None)
+      self.status =  data.get('status', None)
+      self.is_banned =  data.get('is_banned', None)
+      self.warns =  data.get('warns', None)
       self.data = Data(self.ID, data.get('data', {}))
-      self.settings = data['settings']
-      self.subscription = data['subscription']
-      self.firstseen = data['firstseen']
-      self.lastseen = data['lastseen']
+      self.settings =  data.get('settings', {})
+      self.subscription =  data.get('subscription', {})
+      self.firstseen =  data.get('firstseen', None)
+      self.lastseen =  data.get('lastseen', None)
 
    def get_limits(self):
       subscriptions = CONFIG.settings["subscriptions"]
@@ -42,95 +42,62 @@ class USER:
          if subscription["name"] == self.subscription['name']:
             return subscription["data"]["limits"]
 
-   def add_data(self, data):
-      db.update_user_data(self.ID, "$addToSet", data)
+   async def upgrade(self, plan, transaction_id):
+      userdata = {
+            "subscription.name": plan,
+            "subscription.subscription_date": datetime.now(),
+            "subscription.expiry_date":
+            datetime.now() + timedelta(days=30),
+            "subscription.transaction_id": transaction_id,
+        }
+      await db.update_user(self.ID, userdata=userdata)
 
-   def set_data(self, data):
-      db.update_user_data(self.ID, "$set", data)
+   async def gift(self,plan, byUSER):
+      userdata = {
+         "subscription.name": plan,
+         "subscription.subscription_date": datetime.now(),
+         "subscription.expiry_date":
+         datetime.now() + timedelta(days=30),
+         "subscription.gift_by" : byUSER
+      }
+      await db.update_user(self.ID, userdata=userdata)
+      
+   async def remove_subscription(self, userID):
+      userdata = {"subscription": ""}
+      await db.update_user(userID, userdata=userdata)
 
-   def rm_data(self, data):
-      db.update_user_data(self.ID, "$pull", data)
-
-   def upgrade(self, plan, transaction_id):
-      db.update_user(
-          self.ID, {
-              "$set": {
-                  "subscription.name": plan,
-                  "subscription.subscription_date": datetime.now(),
-                  "subscription.expiry_date":
-                  datetime.now() + timedelta(days=30),
-                  "subscription.transaction_id": transaction_id,
-              }
-          })
-   def gift(self,plan, byUSER):
-      db.update_user(
-          self.ID, {
-              "$set": {
-                  "subscription.name": plan,
-                  "subscription.subscription_date": datetime.now(),
-                  "subscription.expiry_date":
-                  datetime.now() + timedelta(days=30),
-                  #"subscription.transaction_id": transaction_id,
-                 "subscription.gift_by" : byUSER
-              }
-          })
-   def remove_subscription(self, userID):
-      db.update_user(userID, {"$unset": {"subscription": ""}})
-
-   def refresh(self, msg):
-      pre_user = db.get_user(msg.from_user.id)
-
-      now = msg.date
+   async def refresh(self, msg):
+      userinfo = {}
+      userdata = {}
+      
       #update lasteen
-      newValues = {'lastseen': msg.date}
-      db.update_user(msg.from_user.id, {"$set": newValues})
-      db.update_user_info(msg.from_user.id, {"$set": newValues})
+      lastseen = msg.date
+      
+      userinfo["lastseen"] = lastseen
+      userdata["lastseen"] = lastseen
 
       #make user active
-      if pre_user.status == "inactive":
-         db.update_user(self.ID, {"$unset": {"status": ""}})
+      if self.status == "inactive":
+         userdata["status"] = "active"
 
       #set dc
-      if pre_user.dc == 0 and msg.from_user.dc_id:
-         db.update_user_info(msg.from_user.id,
-                             {"$set": {
-                                 "dc": msg.from_user.dc_id
-                             }})
+      if self.dc == 0 and msg.from_user.dc_id:
+        userinfo["dc"] =  msg.from_user.dc_id
 
-      #update user info
-      if msg.from_user.username != pre_user.username:
-         db.update_user_info(
-             msg.from_user.id,
-             {
-                 "$push": {
-                     "username": {
-                         "$each": [msg.from_user.username],
-                         "$slice":
-                         -20  # Keep only the last 20 elements in the array
-                     }
-                 }
-             })
+      if msg.from_user.username != self.username:
+         userinfo["username"] = msg.from_user.username
+
       firstname = msg.from_user.first_name
       lastname = " " + msg.from_user.last_name if msg.from_user.last_name else ""
 
       name = firstname + lastname
-      if pre_user.name != name:
-         db.update_user_info(
-             msg.from_user.id,
-             {
-                 "$push": {
-                     "name": {
-                         "$each": [name],
-                         "$slice":
-                         -20  # Keep only the last 20 elements in the array
-                     }
-                 }
-             })
-
+      if self.name != name:
+         userinfo["name"] = name
+      await db.update_user(self.ID, userinfo, userdata)
       if self.subscription:
          if not self.subscription["name"] == "free":
             if now > self.subscription['expiry_date']:
-               self.remove_subscription(self.ID)
+               await self.remove_subscription(self.ID)
                data = {
                   "chat_id": self.ID,
                   "text": "<b>Your subscription expired.\n\nUse /upgrade to continue enjoying premium features</b>",
@@ -141,22 +108,27 @@ class USER:
                                  json=data)
       
 
-   def ban(self):
-      db.update_user(self.ID, {"$set": {"is_banned": True}})
+   async def ban(self):
+      userdata = {"is_banned": True}
+      await db.update_user(self.ID, userdata=userdata)
 
-   def unban(self):
-      db.update_user(self.ID, {"$unset": {"is_banned": ""}})
+   async def unban(self):
+      userdata = {"is_banned": ""}
+      await db.update_user(self.ID, userdata=userdata)
 
-   def clear_warns(self):
-      db.update_user(self.ID, {"$unset": {"warns": ""}})
+   async def clear_warns(self):
+      userdata = {"warns": ""}
+      await db.update_user(self.ID, userdata=userdata)
 
-   def warn(self):
+   async def warn(self):
       max_warn = 3
       if self.warns > max_warn:
-         self.ban()
+         await self.ban()
          return
       else:
-        db.update_user(self.ID, {"$inc": {"warns": 1}})
+         userdata = {"warns": self.warns + 1}
+         await db.update_user(self.ID, userdata=userdata)
 
-   def setStatus(self, status):
-      db.update_user(self.ID, {"$set": {"status": status}})
+   async def setStatus(self, status):
+      userdata = {"status": status}
+      await db.update_user(self.ID, userdata=userdata)

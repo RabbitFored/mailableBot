@@ -8,7 +8,8 @@ def strip_script_tags(page):
     pattern2 = re.compile(r'<script[\s\S]+?/script>')
     result = re.sub(pattern2, "", result)
     return result
-  
+
+
 def make_filter(userID):
   if isinstance(userID, str) and userID.startswith("@"):
     filter = {"username": userID[1:]}
@@ -16,7 +17,6 @@ def make_filter(userID):
     filter = {'userid': int(userID)}
   else:
     filter = {'userid': userID}
-
   return filter
 
 def get_user(message):
@@ -28,11 +28,29 @@ def get_user(message):
   elif message.reply_to_message:
     if message.reply_to_message.forward_from:
       userID = message.reply_to_message.forward_from.id
-
       return userID
   else:
     return None
 
+def get_target_user(message):
+  userID = None
+  username = None
+  
+  args = message.text.split(" ")
+  
+  if len(args) > 1:
+    t = args[1]
+    if t.isdigit():
+      userID = int(t)
+    else:
+      username = t[1:] if t[0] == '@' else t
+  elif message.reply_to_message:
+    if message.reply_to_message.forward_from:
+      userID = message.reply_to_message.forward_from.id
+  else:
+    pass
+  
+  return userID, username
 
 def generate_user(userinfo, userdata):
    data = {
@@ -52,6 +70,9 @@ def generate_user(userinfo, userdata):
    }
    if data["subscription"] == {}:
      data["subscription"]  = {"name": "free"}
+   return USER(data)
+
+def gen_user(data):
    return USER(data)
 
 def chunkstring(string, length):
