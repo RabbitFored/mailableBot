@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from bot.core import database as db
+from bot.core import database as db, utils
 from bot import strings, CONFIG
 from bot.core.utils import generate_keyboard, gen_rand_string
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
@@ -138,15 +138,25 @@ async def set_mail(client, message):
 async def transfer_mail(client, message, mail):
   id , domain = mail.split("@")
   domains = CONFIG.settings["extras"]["domains"]
-  if not domain in domains:
+  if domain not in domains:
     await message.chat.ask("**Cannot transfer this mail**")
     return
   recipient = await message.chat.ask("**Please enter new owners username**")
+  userid2, username2 = utils.get_target_user(recipient)
+  t = userid2 or username2
+
+  user2 = await db.get_user(userid2, username2)
+
   args = recipient.text.split(" ")
-  if not args[0].startswith("@"):
+  
+  if not userid2 and not username2:
     await message.reply_text(
       "**Provide a valid Username. Use /transfer to restart this process**")
     return
+  if not user2:
+    return await message.reply_text(
+      f"**Cannot transfer {mail} to {args[0]}.\nBe sure that the user started me.**"
+    )
   try:
     await client.send_message(
       args[0],
@@ -159,7 +169,6 @@ async def transfer_mail(client, message, mail):
     return
   
   user1 =  await db.get_user(recipient.from_user.id)
-  user2 = await db.get_user(args[0])
 
   mailIDs = user2.data.get("mails", [])
   if not mail in user1.data.get("mails", []):
