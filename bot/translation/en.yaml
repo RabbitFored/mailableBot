@@ -132,7 +132,7 @@ mail_info_txt: |-
    Owner : {owner}
    **
 mail_info_action_btn: |-
-   [Transfer](data::tr_{mailID})
+   [Transfer](data::tr_m:{mailID})
    [Delete](data::dl_m:{mailID})
    
 domain_info_txt: |-

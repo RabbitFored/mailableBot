@@ -47,5 +47,11 @@ async def dl_mail(client, query):
 
 @Client.on_callback_query(fltr.on_marker("tr"))
 async def tr_mail(client, query):
-    mailID = query.data.split("_")[1]
-    await transfer_mail(client, query.message, mailID)
+    data = query.data.split("_")[1]
+    r = data.split(":")[0]
+    
+    if r == "m":
+        mailID= data.split(":")[1]
+        await transfer_mail(client, query.message, mailID)
+    else:
+        pass
