@@ -22,12 +22,12 @@ async def user_check(_, c, msg):
   
   
   #allow self
-  if userID == CONFIG.me.id:
+  if msg.from_user.is_self:
     return False
 
   
 
-  user = await db.get_user(userID)
+  user = await db.get_user(userID, fetch_info=True)
   
   #add new user to db
   if not user:
