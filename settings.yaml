@@ -71,7 +71,7 @@ subscriptions:
       - price: "200,xtr"
         validity: "3,month"
     limits:
-        max_mails: 7
+        max_mails: 10
         custom_domains: true
         send: true
       

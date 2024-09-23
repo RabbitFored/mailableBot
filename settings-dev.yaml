@@ -68,6 +68,9 @@ subscriptions:
       custom_domains: true
       send: true
 
+addons:
+    mails: max_mails
+
 filters:
   accept_tc: true
   ban: true
