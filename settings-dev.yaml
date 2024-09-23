@@ -2,9 +2,16 @@ app_name: tgbot
 app_version: 1.0.0
 
 pyrogram:
-  plugin_dir: "bot/plugins"
   alt_port: true 
   use_mongodb_for_session: true
+
+plugins:
+   load_modules: false
+   dir: "myplugins"
+   repo:
+     - "https://github.com/RabbitFored/telegram-bot-plugins.git"
+   include: ['admin', 'misc', 'stats', 'subscription']
+   exclude: ['ostrich']
 
 commands:
    prefix: ["/", "."]
@@ -13,6 +20,7 @@ commands:
 translation:
    dir: "bot/translation"
    default_language: "en"
+   use_from_env: false
 
 logging:
     loggers:
@@ -49,10 +57,12 @@ subscriptions:
 - name: "premium"
   data:
     prices: 
-      - price: "100,xtr"
+      - price: "100,xtr||1usd"
+        title: "Monthly"
         validity: "1,month"
-      - price: "200,xtr"
-        validity: "3,month"
+      - price: "200,xtr||10usd"
+        title: "Yearly"
+        validity: "12,month"
     limits:
       max_mails: 10
       custom_domains: true
