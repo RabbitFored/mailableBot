@@ -13,7 +13,7 @@ async def inbox(user, id):
     try:
         media = await bot.get_messages(int(user), int(id))
         with tempfile.TemporaryDirectory(prefix=f"{int(user)}_") as temp_dir:
-            temp_file_path = os.path.join(temp_dir, "mail")
+            temp_file_path = os.path.join(temp_dir, f"mail_{id}")
             await media.download(temp_file_path)
             async with aiofiles.open(temp_file_path, "r") as temp_file:
                 content = await temp_file.read()
