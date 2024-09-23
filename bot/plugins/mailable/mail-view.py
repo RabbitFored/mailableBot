@@ -4,7 +4,7 @@ import tempfile
 import aiofiles
 from quart import render_template
 
-from bot import bot, web
+from bot import bot, web, logger
 from bot.core.utils import strip_script_tags
 
 
@@ -20,9 +20,10 @@ async def inbox(user, id):
                 nojs = strip_script_tags(content)
                 await temp_file.close()
                 return await render_template("inbox.html", content=nojs)
-    except:
+    except Exception as e:
         try:
            await bot.send_message(int(user), "File not found")
         except:
             pass
+        logger.error(f"Something went wrong while viewing mails, {e}")
         return "File not found"
