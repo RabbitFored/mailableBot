@@ -11,8 +11,8 @@ from bot.core.utils import strip_script_tags
 @web.route("/inbox/<user>/<id>")
 async def inbox(user, id):
     try:
-        media = await bot.get_messages(int(user), int(id))
         with tempfile.TemporaryDirectory(prefix=f"{int(user)}_") as temp_dir:
+            media = await bot.get_messages(int(user), int(id))
             temp_file_path = os.path.join(temp_dir, f"mail_{id}")
             await media.download(temp_file_path)
             async with aiofiles.open(temp_file_path, "r") as temp_file:
@@ -20,6 +20,9 @@ async def inbox(user, id):
                 nojs = strip_script_tags(content)
                 await temp_file.close()
                 return await render_template("inbox.html", content=nojs)
-    except ValueError:
-        await bot.send_message(int(user), "File not found")
+    except:
+        try:
+           await bot.send_message(int(user), "File not found")
+        except:
+            pass
         return "File not found"
