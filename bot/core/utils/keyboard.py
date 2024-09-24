@@ -6,6 +6,7 @@ def ikb(markdown):
   pattern = re.compile(r'\[([^][]+)\](\(((?:[^()]+|(?2))+)\))')
   
   rows = list(filter(None, markdown.split("\n") ))
+
   keyboard = []
   
   for row in rows:

@@ -1,9 +1,9 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
+from bot.core.utils import ikb
 from bot.core import database as db
 from .tools import get_mx_server
-
+from bot import CONFIG
 
 @Client.on_message(filters.command(["adddomain"]))
 async def adddomain(client, message):
@@ -23,7 +23,7 @@ async def adddomain(client, message):
     domain = await message.chat.ask("Send me your domain name")
 
     dataExists = await db.data_exists({"domains": domain.text})
-    if dataExists:
+    if dataExists or domain.text in CONFIG.settings["extras"]["domains"]:
         await client.send_message(message.chat.id, "Sorry this domain is unavailable")
         return
     mail_servers = get_mx_server(domain.text)
@@ -72,7 +72,7 @@ async def rmdomains(client, message):
             for domain in user_domains:
                 btn += f"[{domain}](data::dl_d:{domain})\n"
 
-            keyboard = utils.generate_keyboard(btn)
+            keyboard = ikb(btn)
 
             await message.reply_text(
                 "Your domains:",
@@ -80,3 +80,23 @@ async def rmdomains(client, message):
                 reply_markup=keyboard,
                 quote=True,
             )
+
+
+
+
+@Client.on_message(filters.command(["domains", "listdomains"]))
+async def domains(client, message):
+    user = await db.get_user(message.from_user.id)
+    
+    domains = CONFIG.settings["extras"]["domains"]
+    txt = "Available Domains:\n\n**NOTE:** free domains may expire anytime, so use your own domains for long term storage.\n\n"
+    for domain in domains:
+        txt += f"- {domain} [FREE]\n"
+        
+    if user.subscription["name"] == "premium":
+        user_domains = user.data.get("domains", [])
+        for domain in user_domains:
+            txt += f"\n- {domain}"
+    btn = "[Add new domain](data::cf_mailable.domains.adddomain)"
+    keyboard = ikb(btn)
+    await message.reply(txt, disable_web_page_preview=True, reply_markup=keyboard, quote=True)

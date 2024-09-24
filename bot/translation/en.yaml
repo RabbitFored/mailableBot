@@ -43,7 +43,8 @@ help_txt: |-
    /adddomain: Add a custom domain
    /rmdomain: Remove a custom domain
    /send: send mail
-   
+
+   **NOTE:** free domains may expire anytime, so use your own domains for long term storage.
 
 help_btn: |-
    [Get Help](url::{group_url})

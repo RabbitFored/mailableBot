@@ -55,3 +55,20 @@ async def tr_mail(client, query):
         await transfer_mail(client, query.message, mailID)
     else:
         pass
+
+
+
+@Client.on_callback_query(fltr.on_marker("chstatus"))
+async def ch_status(client, query):
+    domain = query.data.split("_")[1]
+    mail_servers = get_mx_server(domain)
+
+    if "mx.bruva.co" in mail_servers:
+        user = await db.get_user(query.from_user.id)
+        await query.answer("Domain verified")
+        data = {"domains": domain.text}
+        await user.data.addToSet(data)
+        await db.inc_stat("domains", 1)
+    else:
+        await query.answer("Domain not verified")
+
