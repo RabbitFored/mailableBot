@@ -1,9 +1,10 @@
 from pyrogram import Client, filters
-
+from pyrogram.types import InlineKeyboardButtonBuy, InlineKeyboardMarkup, LabeledPrice
 from bot import CONFIG, strings
 from bot.core import filters as fltr
 from bot.core.utils import generate_keyboard
 from bot.core import database as db
+from datetime import datetime, timedelta, timezone
 
 @Client.on_message(filters.private & ~ filters.me , group=-100)
 async def user_load(client, message):
@@ -17,9 +18,27 @@ async def user_load(client, message):
     
 @Client.on_message(fltr.cmd(["start"]))
 async def start(client, message):
-    key = message.text.split("_")[-1]
+    args = message.text.split(" ")
 
-    if key == "/start":   
+    if len(args) > 1 and args[1].startswith("pay"):   
+        key = args[1].split("_")
+        bot = key[1]
+        amt = key[2]
+        
+        await client.send_invoice(
+                message.chat.id,
+                title="Subscribe | Monthly",
+                description=f"Subscribe to {bot} premium for a month",
+                currency="XTR",
+                payload=bot,
+                prices=[LabeledPrice(label=f"{bot} Premium", amount=int(amt))],
+                start_parameter="start",
+                reply_markup=(
+                    InlineKeyboardMarkup([[InlineKeyboardButtonBuy(text=f"Pay ⭐️{amt}")]])
+                ),
+            )
+
+    else:
         text = strings.get("start_txt", user=message.from_user.mention)
         keyboard = generate_keyboard(strings.get("start_btn"))
 
@@ -28,9 +47,7 @@ async def start(client, message):
             disable_web_page_preview=True,
             reply_markup=keyboard,
             quote=True,
-    )
-    else:
-         print(key)
+        )
 
 
 
