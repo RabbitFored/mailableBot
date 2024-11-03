@@ -17,15 +17,21 @@ async def user_load(client, message):
     
 @Client.on_message(fltr.cmd(["start"]))
 async def start(client, message):
-    text = strings.get("start_txt", user=message.from_user.mention)
-    keyboard = generate_keyboard(strings.get("start_btn"))
+    key = message.text.split("_")[-1]
 
-    await message.reply_text(
-        text,
-        disable_web_page_preview=True,
-        reply_markup=keyboard,
-        quote=True,
+    if key == "/start":   
+        text = strings.get("start_txt", user=message.from_user.mention)
+        keyboard = generate_keyboard(strings.get("start_btn"))
+
+        await message.reply_text(
+            text,
+            disable_web_page_preview=True,
+            reply_markup=keyboard,
+            quote=True,
     )
+    else:
+         print(key)
+
 
 
 @Client.on_message(filters.command(["help"]))
