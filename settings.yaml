@@ -102,7 +102,7 @@ links:
   repo_url: "https://github.com/RabbitFored/mailable"
 
 extras:
-  domains: ['mail.bruva.co', '4qnt.us']
+  domains: ['mail.mednmotive.blog']
   reserved_keyword : [
     'admin', 'owner', 'contact', 'support', 'donate', 'postmaster', 'message',
     'ostrich', 'administrator', 'access', 'account', 'mail', 'email', 'patner',
